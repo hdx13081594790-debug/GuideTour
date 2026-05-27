@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>颐和园智慧导览</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body data-page="tourist">
+    <main class="app-shell">
+      <section class="hero-panel">
+        <div class="hero-copy">
+          <p class="eyebrow">Summer Palace Guide Demo</p>
+          <h1>颐和园智慧导览</h1>
+          <p class="hero-text">用语音、图像和路线 Agent，把一次游览压缩成可演示的完整闭环。</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#chatPanel">开始问答</a>
+            <a class="button secondary" href="/admin">后台管理</a>
+          </div>
+        </div>
+        <div class="map-board" aria-label="颐和园简化地图">
+          <div class="lake-shape"></div>
+          <div id="mapPins"></div>
+        </div>
+      </section>
+
+      <section class="workbench">
+        <aside class="poi-rail">
+          <div class="section-heading">
+            <p class="eyebrow">POI</p>
+            <h2>当前景点</h2>
+          </div>
+          <select id="currentPoi"></select>
+          <div id="poiDetail" class="detail-block"></div>
+        </aside>
+
+        <section id="chatPanel" class="panel chat-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Voice & Chat</p>
+              <h2>智能互动问答</h2>
+            </div>
+            <span id="languageBadge" class="status-pill">中文</span>
+          </div>
+          <div id="chatLog" class="chat-log"></div>
+          <div class="input-stack">
+            <label for="chatInput">输入问题</label>
+            <textarea id="chatInput" rows="3" placeholder="例如：请介绍佛香阁，并推荐下一站"></textarea>
+          </div>
+          <div class="toolbar">
+            <button id="sendChat" class="button primary" type="button">发送</button>
+            <label class="file-button">
+              <input id="audioFile" type="file" accept="audio/*,.txt" />
+              语音识别
+            </label>
+          </div>
+        </section>
+
+        <section class="panel route-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Route</p>
+              <h2>路线规划引导</h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="input-stack">
+              <label for="duration">游览时长</label>
+              <input id="duration" type="number" min="20" max="480" value="90" />
+            </div>
+            <div class="input-stack">
+              <label for="interests">兴趣标签</label>
+              <input id="interests" value="建筑,历史,湖景" />
+            </div>
+          </div>
+          <button id="recommendRoute" class="button primary wide" type="button">生成路线</button>
+          <div id="routeResult" class="route-result empty-state">选择起点和兴趣后生成一条 POI 路线。</div>
+        </section>
+
+        <section class="panel vision-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Vision</p>
+              <h2>目标识别讲解</h2>
+            </div>
+          </div>
+          <label class="drop-zone" for="imageFile">
+            <input id="imageFile" type="file" accept="image/*" />
+            <span>上传或拍摄景点照片</span>
+            <small>文件名包含 foxiang_pavilion、long_corridor 等英文 ID 时可稳定命中。</small>
+          </label>
+          <div id="visionResult" class="vision-result empty-state">等待图片输入。</div>
+        </section>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
