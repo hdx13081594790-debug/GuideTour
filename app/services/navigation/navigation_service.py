@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from app.core.exceptions import AppError
+
 from app.core.config import get_settings
+from app.core.exceptions import AppError
 from app.repositories.navigation_repo import NavigationRepository
 from app.repositories.poi_repo import POIRepository
 from app.schemas.location import GeoPoint
@@ -17,7 +18,10 @@ class NavigationService:
         self.poi_repo = POIRepository(db)
         self.nav_repo = NavigationRepository(db)
         settings = get_settings()
-        self.provider = {"amap": AmapClient(settings.amap_key), "baidu": BaiduClient(settings.baidu_ak)}.get(settings.map_provider, LocalGraphRouter())
+        self.provider = {
+            "amap": AmapClient(settings.amap_key),
+            "baidu": BaiduClient(settings.baidu_ak),
+        }.get(settings.map_provider, LocalGraphRouter())
 
     async def plan_route(self, request: RouteRequest) -> RouteResponse:
         poi = None
