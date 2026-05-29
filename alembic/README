@@ -1,0 +1,1 @@
+Alembic is reserved for schema migrations. The MVP uses SQLAlchemy create_all for fast local startup.

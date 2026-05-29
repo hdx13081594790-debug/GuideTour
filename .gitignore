@@ -1,1 +1,7 @@
-
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+summer_palace_guide.db
+*.sqlite
+*.sqlite3
