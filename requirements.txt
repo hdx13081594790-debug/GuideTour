@@ -1,9 +1,0 @@
-fastapi
-uvicorn[standard]
-python-multipart
-
-# Optional production adapters for the same API boundaries:
-# pymysql
-# redis
-# langchain
-# langgraph
