@@ -7,6 +7,7 @@ from app.services.photo.photo_service import PhotoService
 from app.schemas.photo import PhotoCaptureRequest
 from app.services.vision.gesture_service import GestureService
 from app.services.vision.vision_service import VisionService
+from app.services.realtime.connection_manager import connection_manager
 
 router = APIRouter(prefix="/vision", tags=["vision"])
 gesture_service = GestureService()
@@ -32,7 +33,9 @@ async def analyze_frame(
     for action in actions:
         if action.type == "photo":
             PhotoService(db).capture(PhotoCaptureRequest(session_id=session_id, device_id=device_id, related_poi_id=detected_pois[0].poi_id if detected_pois else None))
-    return VisionAnalyzeResponse(detected_pois=detected_pois, detected_gestures=gestures, actions=actions, explanation_triggered=bool(detected_pois))
+    response = VisionAnalyzeResponse(detected_pois=detected_pois, detected_gestures=gestures, actions=actions, explanation_triggered=bool(detected_pois))
+    await connection_manager.broadcast(session_id, {"type": "vision_analyzed", "session_id": session_id, "device_id": device_id, "result": response})
+    return response
 
 
 @router.post("/analyze-frames", response_model=VisionAnalyzeResponse)
@@ -40,11 +43,15 @@ async def analyze_frames(payload: AnalyzeFramesRequest, db: Session = Depends(ge
     detected_pois = await VisionService(db).analyze_frame(b"", None, None)
     gestures = await gesture_service.detect(b"", payload.mock_gesture)
     actions = await gesture_service.decide_action(gestures, {"session_id": payload.session_id, "detected_poi_name": detected_pois[0].name if detected_pois else None})
-    return VisionAnalyzeResponse(detected_pois=detected_pois, detected_gestures=gestures, actions=actions, explanation_triggered=bool(detected_pois))
+    response = VisionAnalyzeResponse(detected_pois=detected_pois, detected_gestures=gestures, actions=actions, explanation_triggered=bool(detected_pois))
+    await connection_manager.broadcast(payload.session_id, {"type": "vision_analyzed", "session_id": payload.session_id, "device_id": payload.device_id, "result": response})
+    return response
 
 
 @router.post("/gesture")
 async def gesture(payload: AnalyzeFramesRequest):
     gestures = await gesture_service.detect(b"", payload.mock_gesture)
     actions = await gesture_service.decide_action(gestures, {"session_id": payload.session_id})
-    return {"detected_gestures": gestures, "actions": actions}
+    result = {"detected_gestures": gestures, "actions": actions}
+    await connection_manager.broadcast(payload.session_id, {"type": "gesture_detected", "session_id": payload.session_id, "device_id": payload.device_id, "result": result})
+    return result

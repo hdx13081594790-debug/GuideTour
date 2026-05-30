@@ -11,8 +11,10 @@ class Settings(BaseSettings):
     map_provider: str = Field("local", alias="MAP_PROVIDER")
     amap_key: str | None = Field(None, alias="AMAP_KEY")
     baidu_ak: str | None = Field(None, alias="BAIDU_AK")
+    baidu_browser_ak: str | None = Field(None, alias="BAIDU_BROWSER_AK")
     route_fallback_local: bool = Field(True, alias="ROUTE_FALLBACK_LOCAL")
     jwt_secret: str = Field("dev-secret-change-me", alias="JWT_SECRET")
+    auto_create_tables: bool = Field(True, alias="AUTO_CREATE_TABLES")
 
     model_config = SettingsConfigDict(env_file=".env", populate_by_name=True, extra="ignore")
 

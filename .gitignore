@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 .env
 summer_palace_guide.db
+*.db
 *.sqlite
 *.sqlite3
 venv

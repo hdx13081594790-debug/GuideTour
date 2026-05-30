@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.models.device import Device
@@ -20,7 +20,7 @@ class DeviceRepository:
         device.last_heading = payload.heading
         device.last_pitch = payload.pitch
         device.last_roll = payload.roll
-        device.last_seen_at = datetime.utcnow()
+        device.last_seen_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(device)
         return device

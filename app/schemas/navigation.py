@@ -1,5 +1,5 @@
 from typing import Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.schemas.location import GeoPoint
 
 
@@ -62,3 +62,23 @@ class NavigationUpdateResponse(BaseModel):
 class StopNavigationRequest(BaseModel):
     session_id: str
     task_id: str | None = None
+
+
+class NavigationState(BaseModel):
+    task_id: str
+    session_id: str
+    status: str
+    destination_name: str
+    destination_poi_id: int | None = None
+    provider: str
+    current_step_index: int = 0
+    distance_to_next_step_meters: float | None = None
+    distance_to_destination_meters: float | None = None
+    off_route: bool = False
+    off_route_count: int = 0
+    last_instruction: str | None = None
+    last_location: GeoPoint | None = None
+    route_distance_meters: float
+    route_duration_seconds: int
+    route_polyline: list[GeoPoint] = Field(default_factory=list)
+    updated_at: float

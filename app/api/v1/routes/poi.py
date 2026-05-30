@@ -1,17 +1,31 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+
+from app.core.exceptions import AppError
 from app.db.session import get_db
 from app.repositories.poi_repo import POIRepository, poi_to_schema
 from app.schemas.location import GeoPoint
 from app.schemas.poi import POICandidate, POIRead, POISearchResponse
-from app.services.map.coordinate import haversine_meters
+from app.services.navigation.navigation_service import get_map_provider
 
 router = APIRouter(prefix="/poi", tags=["poi"])
 
 
 @router.get("/search", response_model=POISearchResponse)
-def search_poi(q: str | None = None, poi_type: str | None = None, db: Session = Depends(get_db)):
-    return POISearchResponse(items=[poi_to_schema(p) for p in POIRepository(db).search(query=q, poi_type=poi_type)])
+async def search_poi(
+    q: str | None = None,
+    poi_type: str | None = None,
+    lng: float | None = None,
+    lat: float | None = None,
+    radius_meters: int = 1000,
+    db: Session = Depends(get_db),
+):
+    local_items = [poi_to_schema(p) for p in POIRepository(db).search(query=q, poi_type=poi_type)]
+    if local_items or not q:
+        return POISearchResponse(items=local_items)
+    location = GeoPoint(lng=lng, lat=lat) if lng is not None and lat is not None else None
+    provider_items = await get_map_provider().search_poi(q, location=location, radius=radius_meters)
+    return POISearchResponse(items=provider_items)
 
 
 @router.get("/nearby", response_model=list[POICandidate])
@@ -27,6 +41,5 @@ def nearby_poi(lng: float, lat: float, poi_type: str | None = None, radius_meter
 def get_poi(poi_id: int, db: Session = Depends(get_db)):
     poi = POIRepository(db).get(poi_id)
     if not poi:
-        from app.core.exceptions import AppError
         raise AppError("POI 不存在", 404)
     return poi_to_schema(poi)

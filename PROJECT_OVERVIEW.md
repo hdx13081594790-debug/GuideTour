@@ -18,6 +18,8 @@
 | 眼镜画面理解 | 上传图片，返回 mock 景点识别 | `POST /api/v1/vision/analyze-frame` |
 | 手势交互 | V 字拍照、指向导航、握拳停止 | `POST /api/v1/vision/analyze-frames`、`POST /api/v1/vision/gesture` |
 | 拍照记录 | 创建照片资产记录 | `POST /api/v1/photo/capture` |
+| 实时推送 | 眼镜端订阅会话事件 | `WS /api/v1/ws/{session_id}` |
+| 手机客户端 | 以游客使用视角演示 MVP | `GET /client` |
 
 ## 3. 总体架构
 
@@ -42,7 +44,7 @@ flowchart TB
 - **接口层**：所有 HTTP 接口都在 `app/api/v1/routes/`，请求和响应统一使用 `app/schemas/` 中的 Pydantic 模型。
 - **Agent 层**：`GuideAgent` 负责把自然语言转成具体动作，例如最近厕所导航、景点讲解、历史问答、拍照、停止导航。
 - **服务层**：真正做业务能力的地方。地图、RAG、视觉、手势都做了抽象或 mock，后续容易替换。
-- **数据层**：当前默认 SQLite，方便本地启动；保留 MySQL、Redis、向量库、对象存储接入位置。
+- **数据层**：当前默认 SQLite，方便本地启动；实时位置状态和导航状态已优先接入 Redis，并保留 MySQL、向量库、对象存储接入位置。
 
 ## 4. 目录结构速读
 
@@ -266,7 +268,8 @@ classDiagram
 当前策略：
 
 - 业务层只调用 `MapProviderClient`，不直接依赖高德或百度。
-- 没有真实地图 Key 时，`AmapClient` 和 `BaiduClient` 会回退到 `LocalGraphRouter`。
+- `BaiduClient` 已接入百度地图 Place API 地点检索、轻量路线规划步行路线和逆地理编码。
+- 没有真实地图 Key、接口失败或无路线时，`AmapClient` 和 `BaiduClient` 会回退到 `LocalGraphRouter`。
 - 内部统一使用 `lng, lat`。
 - 坐标适配函数位于 `app/services/map/coordinate.py`：
   - 高德：`to_amap_point` 输出 `lng,lat`
@@ -335,7 +338,7 @@ venv\Scripts\python -m pytest -q
 当前测试结果：
 
 ```text
-8 passed
+17 passed
 ```
 
 ## 10. 最快演示路径
@@ -382,13 +385,12 @@ curl -X POST http://127.0.0.1:8000/api/v1/vision/analyze-frames -H "Content-Type
 
 优先级建议：
 
-1. **接入真实 Redis**：替换 `InMemoryLocationStore`，保存实时位置、导航状态、手势冷却和重复讲解记录。
-2. **补 Alembic 迁移**：当前 MVP 用 `create_all`，后续多人协作需要正式 migration。
-3. **接真实地图 API**：把 `AmapClient`、`BaiduClient` 从占位改为真实 HTTP 调用，保留本地路网 fallback。
-4. **替换 RAG**：实现公司向量库版本的 `RAGClient`。
-5. **替换 Vision/Gesture**：接入真实建筑识别、手势识别模型。
-6. **Agent 升级为 LangGraph**：当前规则版稳定可演示，后续可替换成节点式工作流。
-7. **增强导航偏航判断**：基于 polyline 最近点距离、连续偏航次数、定位精度做更稳的判断。
+1. **扩展 Redis 状态**：当前已保存实时位置和导航状态，下一步可保存手势冷却和重复讲解记录。
+2. **接高德真实 API**：当前百度已接入真实 POI、步行路线和逆地理编码，高德仍是占位加本地路网 fallback。
+3. **替换 RAG**：实现公司向量库版本的 `RAGClient`。
+4. **替换 Vision/Gesture**：接入真实建筑识别、手势识别模型。
+5. **Agent 升级为 LangGraph**：当前规则版稳定可演示，后续可替换成节点式工作流。
+6. **自动讲解冷却**：把“90 秒内不重复讲解同一 POI”的规则落到 Redis。
 
 ## 12. 当前项目边界
 
@@ -397,16 +399,19 @@ curl -X POST http://127.0.0.1:8000/api/v1/vision/analyze-frames -H "Content-Type
 - 最小闭环接口。
 - 可运行服务。
 - 可测试 POI seed。
-- Mock 地图、RAG、视觉、手势。
-- 8 个自动化测试。
+- Alembic 初始数据库迁移。
+- 导航 step 推进、到达判断、连续偏航确认和 Redis 状态同步。
+- WebSocket 推送位置、导航、视觉和手势事件。
+- 手机端演示客户端。
+- 百度地图真实 Provider、本地路网兜底、Mock RAG、Mock 视觉、Mock 手势。
+- 19 个自动化测试。
 
 暂未完成：
 
-- 真实 MySQL/Redis 运行依赖强绑定。
-- 真实高德/百度 API 调用。
+- 真实 MySQL 运行依赖强绑定。
+- 真实高德 API 调用。
 - 真实向量数据库。
 - 真实图像识别和手势模型。
-- WebSocket 实时推送。
 - 管理后台。
 
 这些未完成项都已经留了接口和目录位置，后续可以分模块替换，不需要推倒重来。

@@ -1,9 +1,11 @@
 import json
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
 from app.models.navigation_task import NavigationTask
-from app.schemas.navigation import RouteResponse, RouteStep
 from app.schemas.location import GeoPoint
+from app.schemas.navigation import RouteResponse, RouteStep
 
 
 class NavigationRepository:

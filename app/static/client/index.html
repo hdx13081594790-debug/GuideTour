@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>颐和园 AI 导览</title>
+    <link rel="stylesheet" href="/static/client/styles.css" />
+  </head>
+  <body>
+    <main class="stage">
+      <section class="phone" aria-label="颐和园 AI 导览手机端">
+        <section class="map-hero" aria-label="实时地图">
+          <div id="baiduMap" class="baidu-map" hidden></div>
+          <div id="fallbackMap" class="fallback-map">
+            <div class="lake"></div>
+            <svg class="route-svg" viewBox="0 0 320 260" role="img" aria-label="颐和园路线示意">
+              <path class="shore" d="M12 172 C72 104 108 126 152 82 C194 40 236 54 312 22" />
+              <path class="route-path" d="M54 204 C105 164 132 142 169 116 C205 91 232 74 276 50" />
+              <path class="route-point start current-knot" d="M54 190c3.4 4 7.4 4 11.8.2-1.6 5.4-.2 8.9 4.2 10.7-4.7 2.1-6 5.7-3.9 10.9-4.7-2.8-8.7-1.8-12.1 3-3.4-4.8-7.4-5.8-12.1-3 2.1-5.2.8-8.8-3.9-10.9 4.4-1.8 5.8-5.3 4.2-10.7 4.4 3.8 8.4 3.8 11.8-.2Z" />
+              <path class="current-knot-line" d="M47 202c3.4-4.2 10.6-4.2 14 0M49 206c3.3 2.3 6.7 2.3 10 0M54 207v11" />
+              <path class="route-point dest palace-pin" d="M276 37c7.2 0 13 5.8 13 12.9 0 9-13 17.9-13 17.9s-13-8.9-13-17.9c0-7.1 5.8-12.9 13-12.9Z" />
+            </svg>
+          </div>
+
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Summer Palace Guide</p>
+              <h1>颐和园导览</h1>
+            </div>
+            <div class="status-pill" id="wsStatus">
+              <span class="status-dot"></span>
+              <span>连接中</span>
+            </div>
+          </header>
+
+          <div class="map-chip map-chip-left">当前位置</div>
+          <div class="map-chip map-chip-right" id="mapDestination">目的地</div>
+          <div class="compass">
+            <span>NE</span>
+            <strong id="headingValue">85°</strong>
+          </div>
+
+          <section class="route-sheet" aria-label="导航状态">
+            <div class="route-main">
+              <span id="navStatus">待开始</span>
+              <strong id="distanceValue">--</strong>
+            </div>
+            <div class="route-sub">
+              <span>当前步骤</span>
+              <strong id="stepValue">--</strong>
+            </div>
+            <button class="round-button" id="refreshLocationBtn" title="更新位置" aria-label="更新位置">
+              <svg viewBox="0 0 24 24"><path d="M12 4v3m0 10v3M4 12h3m10 0h3M7.8 7.8l2.1 2.1m4.2 4.2 2.1 2.1m0-8.4-2.1 2.1m-4.2 4.2-2.1 2.1"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </section>
+        </section>
+
+        <section class="content">
+          <section class="view active" data-view="guide">
+            <div class="section-head">
+              <div>
+                <p class="kicker">Live Guide</p>
+                <h2>即时导览</h2>
+              </div>
+              <button class="text-button" data-switch="events">查看事件</button>
+            </div>
+            <p class="spoken" id="mainNarration">万寿山前风平，导览待命。</p>
+            <div class="suggestions" id="suggestions"></div>
+            <div class="action-grid">
+              <button class="action primary" id="toiletBtn">
+                <svg viewBox="0 0 24 24"><path d="M8 4h8v6a4 4 0 0 1-8 0V4Z"/><path d="M9 20h6M12 14v6"/></svg>
+                <span>最近厕所</span>
+              </button>
+              <button class="action" id="deheBtn">
+                <svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V9l6-4 6 4v11M9 20v-7h6v7"/></svg>
+                <span>去德和园</span>
+              </button>
+              <button class="action" id="explainBtn">
+                <svg viewBox="0 0 24 24"><path d="M5 6h14v10H8l-3 3V6Z"/><path d="M8 9h8M8 12h5"/></svg>
+                <span>讲解附近</span>
+              </button>
+              <button class="action danger" id="stopBtn">
+                <svg viewBox="0 0 24 24"><path d="M7 7h10v10H7z"/></svg>
+                <span>停止导航</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="view" data-view="ask">
+            <div class="section-head">
+              <div>
+                <p class="kicker">Conversation</p>
+                <h2>语音问答</h2>
+              </div>
+              <span class="mini-label" id="intentLabel">intent: --</span>
+            </div>
+            <form class="chat-form" id="chatForm">
+              <label for="chatInput">游客语音文本</label>
+              <div class="input-row">
+                <input id="chatInput" name="chatInput" value="我想去最近的厕所" autocomplete="off" />
+                <button type="submit" class="send-button" aria-label="发送">
+                  <svg viewBox="0 0 24 24"><path d="M4 12 20 5l-5 14-3-6-8-1Z"/></svg>
+                </button>
+              </div>
+            </form>
+            <button class="wide-command" id="ragBtn">
+              <span>追问：这个建筑为什么有三层？</span>
+              <svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 0 7 7"/><path d="M12 9v4l3 2M17 3v4h4"/></svg>
+            </button>
+          </section>
+
+          <section class="view" data-view="vision">
+            <div class="section-head">
+              <div>
+                <p class="kicker">Glasses View</p>
+                <h2>眼镜画面</h2>
+              </div>
+              <span class="mini-label">mock frame</span>
+            </div>
+            <div class="vision-preview">
+              <div class="scan-line"></div>
+              <div class="target-box">德和园大戏楼</div>
+            </div>
+            <div class="action-grid two">
+              <button class="action primary" id="gestureBtn">
+                <svg viewBox="0 0 24 24"><path d="M7 12V6a2 2 0 0 1 4 0v5"/><path d="M11 11V5a2 2 0 0 1 4 0v7"/><path d="M15 12V8a2 2 0 0 1 4 0v6a6 6 0 0 1-12 0v-2"/></svg>
+                <span>V 字拍照</span>
+              </button>
+              <button class="action" id="wakeQuestionBtn">
+                <svg viewBox="0 0 24 24"><path d="M12 18a6 6 0 1 0-6-6"/><path d="M8 18h8M12 14v4"/></svg>
+                <span>唤醒提问</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="view" data-view="events">
+            <div class="section-head">
+              <div>
+                <p class="kicker">Realtime</p>
+                <h2>实时事件</h2>
+              </div>
+              <button class="text-button" id="clearEventsBtn">清空</button>
+            </div>
+            <ol class="event-list" id="eventList"></ol>
+          </section>
+        </section>
+
+        <nav class="tabbar" aria-label="页面导航">
+          <button class="tab active" data-switch="guide">
+            <svg viewBox="0 0 24 24"><path d="M5 19 19 5M7 7h10v10"/></svg>
+            <span>导览</span>
+          </button>
+          <button class="tab" data-switch="ask">
+            <svg viewBox="0 0 24 24"><path d="M5 6h14v10H8l-3 3V6Z"/><path d="M8 9h8M8 12h5"/></svg>
+            <span>问答</span>
+          </button>
+          <button class="tab" data-switch="vision">
+            <svg viewBox="0 0 24 24"><path d="M4 8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>眼镜</span>
+          </button>
+          <button class="tab" data-switch="events">
+            <svg viewBox="0 0 24 24"><path d="M6 5h12M6 12h12M6 19h12"/></svg>
+            <span>事件</span>
+          </button>
+        </nav>
+      </section>
+    </main>
+
+    <script src="/static/client/app.js"></script>
+  </body>
+</html>
