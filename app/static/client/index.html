@@ -12,20 +12,47 @@
         <section class="map-hero" aria-label="实时地图">
           <div id="baiduMap" class="baidu-map" hidden></div>
           <div id="fallbackMap" class="fallback-map">
+            <i class="corner-ornament corner-tl"></i>
+            <i class="corner-ornament corner-tr"></i>
+            <i class="corner-ornament corner-bl"></i>
+            <i class="corner-ornament corner-br"></i>
+            <div class="paper-map-layer land-west"></div>
+            <div class="paper-map-layer land-east"></div>
             <div class="lake"></div>
-            <svg class="route-svg" viewBox="0 0 320 260" role="img" aria-label="颐和园路线示意">
-              <path class="shore" d="M12 172 C72 104 108 126 152 82 C194 40 236 54 312 22" />
-              <path class="route-path" d="M54 204 C105 164 132 142 169 116 C205 91 232 74 276 50" />
-              <path class="route-point start current-knot" d="M54 190c3.4 4 7.4 4 11.8.2-1.6 5.4-.2 8.9 4.2 10.7-4.7 2.1-6 5.7-3.9 10.9-4.7-2.8-8.7-1.8-12.1 3-3.4-4.8-7.4-5.8-12.1-3 2.1-5.2.8-8.8-3.9-10.9 4.4-1.8 5.8-5.3 4.2-10.7 4.4 3.8 8.4 3.8 11.8-.2Z" />
-              <path class="current-knot-line" d="M47 202c3.4-4.2 10.6-4.2 14 0M49 206c3.3 2.3 6.7 2.3 10 0M54 207v11" />
-              <path class="route-point dest palace-pin" d="M276 37c7.2 0 13 5.8 13 12.9 0 9-13 17.9-13 17.9s-13-8.9-13-17.9c0-7.1 5.8-12.9 13-12.9Z" />
+            <svg class="route-svg" viewBox="0 0 360 680" role="img" aria-label="颐和园路线示意">
+              <path class="map-road road-main" d="M86 40 C126 92 130 148 104 212 C80 272 78 342 118 396 C160 452 158 520 116 612" />
+              <path class="map-road road-east" d="M232 34 C218 110 222 186 254 248 C286 310 300 398 268 476 C244 534 246 596 292 650" />
+              <path class="map-road bridge-road" d="M72 544 C126 522 184 518 238 535 C270 546 294 566 318 596" />
+              <path class="bridge-arch" d="M118 563 C158 540 219 543 260 574" />
+              <path class="bridge-arch small" d="M132 569 C165 554 213 556 247 579" />
+              <path class="route-path" d="M202 185 C184 200 182 224 196 241 C215 264 246 268 250 294 C254 320 235 346 208 361" />
+              <path class="route-point start current-knot" d="M180 244c4.4 5.2 9.6 5.2 15.4.2-2.1 6.9-.2 11.5 5.5 13.8-6.2 2.7-8 7.4-5.2 14-6.1-3.6-11.4-2.3-15.7 3.7-4.4-6-9.6-7.3-15.8-3.7 2.8-6.6 1.1-11.3-5.2-14 5.8-2.3 7.6-6.9 5.5-13.8 5.9 5 11 5 15.5-.2Z" />
+              <path class="current-knot-line" d="M169 259c5.4-6.7 16.8-6.7 22.2 0M172 266c5.2 3.6 10.6 3.6 15.8 0M180 267v16" />
+              <path class="route-point dest palace-pin" d="M250 300c7.8 0 14.1 6.2 14.1 14 0 9.7-14.1 19.3-14.1 19.3s-14.1-9.6-14.1-19.3c0-7.8 6.3-14 14.1-14Z" />
+              <g class="map-building tower-a">
+                <path d="M56 520h76M66 506h56M74 492h40M82 478h24" />
+                <path d="M62 520v24h64v-24M78 520v-16M110 520v-16" />
+              </g>
+              <g class="map-building tower-b">
+                <path d="M250 84h72M260 70h52M270 56h32" />
+                <path d="M258 84v25h56V84" />
+              </g>
             </svg>
+            <span class="map-label label-yuquan">玉泉山路</span>
+            <span class="map-label label-west">西山公园</span>
+            <span class="map-label label-group">群组阁景区</span>
+            <span class="map-label label-willow">西堤古柳</span>
+            <span class="map-label label-dehe">德和园大戏楼</span>
+            <span class="map-label label-lake">昆明湖</span>
+            <span class="map-label label-bridge">十七孔桥</span>
+            <span class="map-label label-island">南湖岛</span>
           </div>
 
           <header class="topbar">
             <div>
-              <p class="eyebrow">Summer Palace Guide</p>
+              <p class="eyebrow">SUMMER PALACE GUIDE</p>
               <h1>颐和园导览</h1>
+              <p class="subtitle"><span>皇家园林</span><span>山水长卷</span></p>
             </div>
             <div class="status-pill" id="wsStatus">
               <span class="status-dot"></span>
@@ -42,12 +69,14 @@
 
           <section class="route-sheet" aria-label="导航状态">
             <div class="route-main">
-              <span id="navStatus">待开始</span>
-              <strong id="distanceValue">--</strong>
+              <span id="navStatus">导航中</span>
+              <strong id="distanceValue">634m</strong>
+              <em>距离下一转弯</em>
             </div>
             <div class="route-sub">
               <span>当前步骤</span>
-              <strong id="stepValue">--</strong>
+              <strong id="stepValue">1/3</strong>
+              <em>请按路线前行</em>
             </div>
             <button class="round-button" id="refreshLocationBtn" title="更新位置" aria-label="更新位置">
               <svg viewBox="0 0 24 24"><path d="M12 4v3m0 10v3M4 12h3m10 0h3M7.8 7.8l2.1 2.1m4.2 4.2 2.1 2.1m0-8.4-2.1 2.1m-4.2 4.2-2.1 2.1"/><circle cx="12" cy="12" r="3"/></svg>
@@ -55,36 +84,16 @@
           </section>
         </section>
 
+        <div class="route-progress" aria-label="路线进度">
+          <span class="route-progress-fill"></span>
+          <span class="route-progress-pin"></span>
+        </div>
+
+        <p class="spoken guide-narration" id="mainNarration">万寿山前风平，导览待命。</p>
+        <div class="suggestions guide-suggestions" id="suggestions"></div>
+
         <section class="content">
-          <section class="view active" data-view="guide">
-            <div class="section-head">
-              <div>
-                <p class="kicker">Live Guide</p>
-                <h2>即时导览</h2>
-              </div>
-              <button class="text-button" data-switch="events">查看事件</button>
-            </div>
-            <p class="spoken" id="mainNarration">万寿山前风平，导览待命。</p>
-            <div class="suggestions" id="suggestions"></div>
-            <div class="action-grid">
-              <button class="action primary" id="toiletBtn">
-                <svg viewBox="0 0 24 24"><path d="M8 4h8v6a4 4 0 0 1-8 0V4Z"/><path d="M9 20h6M12 14v6"/></svg>
-                <span>最近厕所</span>
-              </button>
-              <button class="action" id="deheBtn">
-                <svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V9l6-4 6 4v11M9 20v-7h6v7"/></svg>
-                <span>去德和园</span>
-              </button>
-              <button class="action" id="explainBtn">
-                <svg viewBox="0 0 24 24"><path d="M5 6h14v10H8l-3 3V6Z"/><path d="M8 9h8M8 12h5"/></svg>
-                <span>讲解附近</span>
-              </button>
-              <button class="action danger" id="stopBtn">
-                <svg viewBox="0 0 24 24"><path d="M7 7h10v10H7z"/></svg>
-                <span>停止导航</span>
-              </button>
-            </div>
-          </section>
+          <section class="view active guide-view" data-view="guide" aria-label="导览地图"></section>
 
           <section class="view" data-view="ask">
             <div class="section-head">

@@ -126,8 +126,11 @@ async function initBaiduMap() {
       return;
     }
     baiduSdk = window.BMapGL;
-    els.fallbackMap.hidden = true;
-    els.baiduMap.hidden = false;
+    els.fallbackMap.hidden = false;
+    els.baiduMap.hidden = true;
+    baiduMap = null;
+    addEvent("map_ready", "百度地图 SDK 已加载，当前使用插画地图底图");
+    return;
     baiduMap = new baiduSdk.Map("baiduMap");
     const point = toBaiduPoint(origin);
     baiduMap.centerAndZoom(point, 16);
@@ -300,7 +303,7 @@ document.querySelectorAll("[data-switch]").forEach((button) => {
   button.addEventListener("click", () => switchView(button.dataset.switch));
 });
 
-document.querySelector("#refreshLocationBtn").addEventListener("click", () => runAction("更新当前位置", async () => {
+document.querySelector("#refreshLocationBtn")?.addEventListener("click", () => runAction("更新当前位置", async () => {
   const data = await api.post("/api/v1/location/update", {
     session_id: sessionId,
     device_id: deviceId,
@@ -315,7 +318,7 @@ document.querySelector("#refreshLocationBtn").addEventListener("click", () => ru
   drawCurrentPosition(data.location);
 }));
 
-document.querySelector("#toiletBtn").addEventListener("click", () => runAction("最近厕所", async () => {
+document.querySelector("#toiletBtn")?.addEventListener("click", () => runAction("最近厕所", async () => {
   const route = await api.post("/api/v1/navigation/nearest", {
     session_id: sessionId,
     origin,
@@ -325,7 +328,7 @@ document.querySelector("#toiletBtn").addEventListener("click", () => runAction("
   updateRoute(route);
 }));
 
-document.querySelector("#deheBtn").addEventListener("click", () => runAction("去德和园", async () => {
+document.querySelector("#deheBtn")?.addEventListener("click", () => runAction("去德和园", async () => {
   const route = await api.post("/api/v1/navigation/route", {
     session_id: sessionId,
     origin,
@@ -336,7 +339,7 @@ document.querySelector("#deheBtn").addEventListener("click", () => runAction("�
   updateRoute(route);
 }));
 
-document.querySelector("#explainBtn").addEventListener("click", () => runAction("讲解附近", async () => {
+document.querySelector("#explainBtn")?.addEventListener("click", () => runAction("讲解附近", async () => {
   const data = await api.post("/api/v1/agent/explain-nearby", {
     session_id: sessionId,
     device_id: deviceId,
@@ -351,7 +354,7 @@ document.querySelector("#explainBtn").addEventListener("click", () => runAction(
   els.mapDestination.textContent = data.poi_name || "附近景点";
 }));
 
-document.querySelector("#ragBtn").addEventListener("click", () => runAction("RAG 追问", async () => {
+document.querySelector("#ragBtn")?.addEventListener("click", () => runAction("RAG 追问", async () => {
   const data = await api.post("/api/v1/rag/answer", {
     query: "这个建筑为什么有三层？",
     poi_id: 2,
@@ -359,7 +362,7 @@ document.querySelector("#ragBtn").addEventListener("click", () => runAction("RAG
   setNarration(data.answer);
 }, "guide"));
 
-document.querySelector("#gestureBtn").addEventListener("click", () => runAction("V 字拍照", async () => {
+document.querySelector("#gestureBtn")?.addEventListener("click", () => runAction("V 字拍照", async () => {
   const data = await api.post("/api/v1/vision/analyze-frames", {
     session_id: sessionId,
     device_id: deviceId,
@@ -370,12 +373,12 @@ document.querySelector("#gestureBtn").addEventListener("click", () => runAction(
   setNarration(message);
 }, "guide"));
 
-document.querySelector("#wakeQuestionBtn").addEventListener("click", () => {
+document.querySelector("#wakeQuestionBtn")?.addEventListener("click", () => {
   els.chatInput.value = "这个建筑有什么故事？";
   switchView("ask");
 });
 
-document.querySelector("#stopBtn").addEventListener("click", () => runAction("停止导航", async () => {
+document.querySelector("#stopBtn")?.addEventListener("click", () => runAction("停止导航", async () => {
   if (!currentTaskId) {
     setNarration("当前没有正在进行的导航。");
     return;
@@ -403,7 +406,7 @@ els.chatForm.addEventListener("submit", (event) => {
   }, "guide");
 });
 
-document.querySelector("#clearEventsBtn").addEventListener("click", () => {
+document.querySelector("#clearEventsBtn")?.addEventListener("click", () => {
   els.eventList.innerHTML = "";
 });
 
