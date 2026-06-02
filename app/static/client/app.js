@@ -54,10 +54,13 @@ function switchView(name) {
 }
 
 function setNarration(text) {
-  els.mainNarration.textContent = text || "没有返回内容。";
+  if (els.mainNarration) {
+    els.mainNarration.textContent = text || "没有返回内容。";
+  }
 }
 
 function setSuggestions(items = []) {
+  if (!els.suggestions) return;
   els.suggestions.innerHTML = "";
   items.forEach((item) => {
     const pill = document.createElement("button");
@@ -100,6 +103,7 @@ function updateNavigationState(state) {
 }
 
 function addEvent(type, detail) {
+  if (!els.eventList) return;
   const item = document.createElement("li");
   item.className = "event-item";
   const title = document.createElement("strong");
@@ -126,11 +130,9 @@ async function initBaiduMap() {
       return;
     }
     baiduSdk = window.BMapGL;
-    els.fallbackMap.hidden = false;
-    els.baiduMap.hidden = true;
-    baiduMap = null;
-    addEvent("map_ready", "百度地图 SDK 已加载，当前使用插画地图底图");
-    return;
+    els.fallbackMap.hidden = true;
+    els.baiduMap.hidden = false;
+    document.querySelector(".map-hero")?.classList.remove("map-live");
     baiduMap = new baiduSdk.Map("baiduMap");
     const point = toBaiduPoint(origin);
     baiduMap.centerAndZoom(point, 16);
@@ -169,45 +171,22 @@ function createSvgIcon(svg, size = 44) {
 
 function currentLocationIcon() {
   return createSvgIcon(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-      <defs>
-        <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#4d1511" flood-opacity=".28"/>
-        </filter>
-      </defs>
-      <g filter="url(#shadow)">
-        <path d="M24 4.5c4.6 5.1 9.9 5.1 15.9.2-2.2 7-.3 11.6 5.6 13.9-6.3 2.8-8.1 7.5-5.3 14.2-6.3-3.6-11.7-2.3-16.2 3.8-4.5-6.1-9.9-7.4-16.2-3.8 2.8-6.7 1-11.4-5.3-14.2 5.9-2.3 7.8-6.9 5.6-13.9 6 4.9 11.3 4.9 15.9-.2Z" fill="#8f2f26" stroke="#bd9550" stroke-width="2.4"/>
-        <circle cx="24" cy="20.5" r="8.3" fill="#bd9550" opacity=".18"/>
-        <path d="M15.2 21.8c3.9-5.5 13.7-5.5 17.6 0M17.8 27.1c4.4 3.1 8 3.1 12.4 0M24 28.2v12.3M19.5 35.2h9" fill="none" stroke="#fff5dc" stroke-width="2.2" stroke-linecap="round"/>
-      </g>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42">
+      <circle cx="21" cy="21" r="10" fill="#A33A2C" stroke="#F7EEDC" stroke-width="3"/>
+      <circle cx="21" cy="21" r="17" fill="none" stroke="#D7B56D" stroke-width="2" opacity=".45"/>
     </svg>`,
-    48,
+    42,
   );
 }
 
 function destinationIcon() {
   return createSvgIcon(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
-      <path d="M22 3.8c8.6 0 15.6 6.9 15.6 15.5 0 10.7-15.6 21-15.6 21S6.4 30 6.4 19.3C6.4 10.7 13.4 3.8 22 3.8Z" fill="#173f36" stroke="#bd9550" stroke-width="2.2"/>
-      <path d="M13.7 20.8h16.6M16.2 17.8l5.8-4.4 5.8 4.4M17.4 20.8v6.8M26.6 20.8v6.8" fill="none" stroke="#fff5dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+      <path d="M20 4c7 0 12.5 5.4 12.5 12.2 0 8.5-12.5 18.2-12.5 18.2S7.5 24.7 7.5 16.2C7.5 9.4 13 4 20 4Z" fill="#164B3E" stroke="#F7EEDC" stroke-width="2.4"/>
+      <circle cx="20" cy="16" r="4" fill="#E7D2A0"/>
     </svg>`,
-    44,
+    40,
   );
-}
-
-function createMapLabel(text, offset = new baiduSdk.Size(18, -12)) {
-  const label = new baiduSdk.Label(text, { offset });
-  label.setStyle({
-    color: "#5f1f1a",
-    backgroundColor: "rgba(255, 248, 229, .92)",
-    border: "1px solid #bd9550",
-    borderRadius: "999px",
-    padding: "4px 9px",
-    fontFamily: '"SimSun", "Songti SC", serif',
-    fontSize: "12px",
-    boxShadow: "0 8px 18px rgba(76, 33, 22, .16)",
-  });
-  return label;
 }
 
 function drawCurrentPosition(point) {
@@ -218,9 +197,7 @@ function drawCurrentPosition(point) {
     return;
   }
   baiduMap.clearOverlays();
-  const marker = new baiduSdk.Marker(toBaiduPoint(point), { icon: currentLocationIcon() });
-  marker.setLabel(createMapLabel("当前位置"));
-  baiduMap.addOverlay(marker);
+  baiduMap.addOverlay(new baiduSdk.Marker(toBaiduPoint(point), { icon: currentLocationIcon() }));
 }
 
 function drawRoute(route, movingPoint = currentPoint || origin) {
@@ -228,20 +205,13 @@ function drawRoute(route, movingPoint = currentPoint || origin) {
   baiduMap.clearOverlays();
   const points = route.polyline.map(toBaiduPoint);
   const line = new baiduSdk.Polyline(points, {
-    strokeColor: "#8f2f26",
+    strokeColor: "#7A2A22",
     strokeWeight: 7,
     strokeOpacity: 0.92,
   });
   baiduMap.addOverlay(line);
-
-  const start = new baiduSdk.Marker(toBaiduPoint(movingPoint), { icon: currentLocationIcon() });
-  start.setLabel(createMapLabel("当前位置"));
-  baiduMap.addOverlay(start);
-
-  const destinationPoint = points[points.length - 1];
-  const destination = new baiduSdk.Marker(destinationPoint, { icon: destinationIcon() });
-  destination.setLabel(createMapLabel(route.destination_name));
-  baiduMap.addOverlay(destination);
+  baiduMap.addOverlay(new baiduSdk.Marker(toBaiduPoint(movingPoint), { icon: currentLocationIcon() }));
+  baiduMap.addOverlay(new baiduSdk.Marker(points[points.length - 1], { icon: destinationIcon() }));
   baiduMap.setViewport([toBaiduPoint(movingPoint), ...points], { margins: [72, 34, 116, 34] });
 }
 
@@ -369,8 +339,7 @@ document.querySelector("#gestureBtn")?.addEventListener("click", () => runAction
     frame_ids: ["demo-frame"],
     mock_gesture: "take_photo",
   });
-  const message = data.actions[0]?.message || "已识别画面。";
-  setNarration(message);
+  setNarration(data.actions[0]?.message || "已识别画面。");
 }, "guide"));
 
 document.querySelector("#wakeQuestionBtn")?.addEventListener("click", () => {
