@@ -803,10 +803,10 @@ h2 {
 .guide-narration,
 .guide-suggestions {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: 10px;
+  height: 10px;
   overflow: hidden;
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
 }
 

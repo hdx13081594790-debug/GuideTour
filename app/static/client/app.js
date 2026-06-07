@@ -21,6 +21,7 @@ const els = {
   eventList: document.querySelector("#eventList"),
   chatForm: document.querySelector("#chatForm"),
   chatInput: document.querySelector("#chatInput"),
+  askAnswer: document.querySelector("#askAnswer"),
   baiduMap: document.querySelector("#baiduMap"),
   fallbackMap: document.querySelector("#fallbackMap"),
 };
@@ -266,6 +267,12 @@ async function runAction(label, fn, nextView = "guide") {
   } catch (error) {
     addEvent("error", error.message);
     setNarration(error.message);
+
+    if (els.askAnswer) {
+      els.askAnswer.textContent = `请求失败：${error.message}`;
+    }
+
+    switchView("ask");
   }
 }
 
@@ -358,6 +365,7 @@ document.querySelector("#stopBtn")?.addEventListener("click", () => runAction("�
 
 els.chatForm.addEventListener("submit", (event) => {
   event.preventDefault();
+
   runAction("对话请求", async () => {
     const data = await api.post("/api/v1/agent/chat", {
       session_id: sessionId,
@@ -368,11 +376,23 @@ els.chatForm.addEventListener("submit", (event) => {
       language: "zh",
       current_poi_id: 2,
     });
+
     els.intentLabel.textContent = `intent: ${data.intent}`;
+
+    if (els.askAnswer) {
+      els.askAnswer.textContent = data.response_text;
+    }
+
     setNarration(data.response_text);
     setSuggestions(data.suggested_questions || []);
-    if (data.route) updateRoute(data.route);
-  }, "guide");
+
+    if (
+      data.route &&
+      ["NAVIGATE_TO_POI", "NAVIGATE_NEAREST_SERVICE"].includes(data.intent)
+    ) {
+      updateRoute(data.route);
+    }
+  }, "ask");
 });
 
 document.querySelector("#clearEventsBtn")?.addEventListener("click", () => {
