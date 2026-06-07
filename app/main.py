@@ -1,8 +1,16 @@
 from contextlib import asynccontextmanager
+import sys
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+import uvicorn
+
 from app.api.v1.routes import agent, config, location, navigation, photo, poi, rag, vision, ws
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
@@ -48,3 +56,10 @@ app.include_router(poi.router, prefix=settings.api_prefix)
 app.include_router(rag.router, prefix=settings.api_prefix)
 app.include_router(vision.router, prefix=settings.api_prefix)
 app.include_router(ws.router, prefix=settings.api_prefix)
+if __name__ == "__main__":
+    uvicorn.run(
+        "app.main:app",
+        host="127.0.0.1",
+        port=8010,
+        reload=True
+    )
