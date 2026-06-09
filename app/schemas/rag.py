@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 #
 # retrieve 阶段返回 RAGChunk 证据片段；
 # answer 阶段返回 RAGAnswer，包含最终回答、引用片段和置信度。
-# 当前实现是 MockRAGClient，未来真实向量库也应该返回同样结构。
+# 当前项目不再提供本地预设 RAG。未来真实向量库接入后，
+# 仍应返回同样结构，方便前端和 Agent 复用。
 
 
 class RAGChunk(BaseModel):

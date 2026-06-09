@@ -19,11 +19,11 @@ from pathlib import Path
 # 当你在 VSCode 里直接运行 app/main.py 时，Python 默认只把 app/
 # 目录当成导入搜索路径。这里把项目根目录 GuideTour 加入 sys.path，
 # 这样 from app.xxx import ... 才能找到顶层 app 包。
-ROOT_DIR = Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
+# ROOT_DIR = Path(__file__).resolve().parents[1]
+# if str(ROOT_DIR) not in sys.path:
+#     sys.path.insert(0, str(ROOT_DIR))
 
-import uvicorn
+# import uvicorn
 
 from app.api.v1.routes import agent, config, location, navigation, photo, poi, rag, vision, ws
 from app.core.config import get_settings
@@ -84,10 +84,10 @@ app.include_router(ws.router, prefix=settings.api_prefix)
 
 # 允许 VSCode 直接运行 app/main.py。正常部署时更推荐：
 # python -m uvicorn app.main:app --host 127.0.0.1 --port 8010 --reload
-if __name__ == "__main__":
-    uvicorn.run(
-        "app.main:app",
-        host="127.0.0.1",
-        port=8010,
-        reload=True
-    )
+# if __name__ == "__main__":
+#     uvicorn.run(
+#         "app.main:app",
+#         host="127.0.0.1",
+#         port=8010,
+#         reload=True
+#     )
