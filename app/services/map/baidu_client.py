@@ -11,6 +11,21 @@ from app.services.map.base import MapProviderClient
 from app.services.map.coordinate import to_baidu_point
 from app.services.map.local_graph_router import LocalGraphRouter
 
+# 百度地图服务端适配器。
+#
+# 作用：
+# - search_poi：调用百度地点检索，补充本地 POI 表没有的数据；
+# - walking_route：调用百度轻量步行路线；
+# - reverse_geocode：坐标反查地址。
+#
+# 注意坐标格式：
+# 项目内部统一 GeoPoint(lng, lat)，但百度接口 location 参数要求 lat,lng，
+# 所以所有出站请求都通过 coordinate.to_baidu_point() 转换。
+#
+# 失败策略：
+# 没有 AK、百度接口失败、返回无路线时，不让业务直接报错，
+# 而是回退到 LocalGraphRouter，保证 MVP 演示链路不断。
+
 
 class BaiduClient(MapProviderClient):
     name = "baidu"
@@ -23,6 +38,8 @@ class BaiduClient(MapProviderClient):
         self.fallback = LocalGraphRouter()
 
     async def search_poi(self, query: str, location: GeoPoint | None = None, radius: int = 1000) -> list[POIRead]:
+        # 返回的百度 POI 没有本地数据库 id，这里用负数 id 临时标识。
+        # 如果后续需要把外部 POI 写入数据库，可在 Repository 层做正式映射。
         if not self.ak:
             return []
         params: dict[str, str | int] = {
@@ -162,6 +179,8 @@ def _route_polyline(origin: GeoPoint, destination: GeoPoint, raw_steps: list[dic
 
 
 def _parse_baidu_path(path: str) -> list[GeoPoint]:
+    # 百度 path 格式通常是 "lng,lat;lng,lat;..."。
+    # 这里解析成内部统一的 GeoPoint 列表，供前端画 polyline。
     points: list[GeoPoint] = []
     for raw in path.split(";"):
         parts = raw.split(",")

@@ -2,6 +2,19 @@ const sessionId = "s001";
 const deviceId = "glass001";
 const origin = { lng: 116.2699, lat: 39.9991, coord_type: "gcj02" };
 
+// 这个文件是手机端演示页面的“薄前端控制器”。
+//
+// 主要职责：
+// 1. 绑定底部 tab、问答表单、导航按钮等 UI 事件；
+// 2. 调用 FastAPI 后端接口；
+// 3. 接收 WebSocket 实时事件；
+// 4. 把后端返回的路线/回答/事件渲染到页面。
+//
+// 数据流示例：
+// - 问答：chatForm submit -> POST /api/v1/agent/chat -> askAnswer 显示回答；
+// - 导航：后端返回 route -> updateRoute() -> 百度地图画 polyline；
+// - 实时：WebSocket message -> updateNavigationState()/setNarration()。
+
 let currentTaskId = null;
 let baiduMap = null;
 let baiduSdk = null;
@@ -27,6 +40,7 @@ const els = {
 };
 
 const api = {
+  // 后端所有接口都返回 JSON；这里统一处理 response.ok 和错误消息。
   async get(path) {
     const response = await fetch(path);
     const data = await response.json();
@@ -46,6 +60,7 @@ const api = {
 };
 
 function switchView(name) {
+  // 页面不是多路由 SPA，只是通过 data-view 切换几个面板。
   document.querySelectorAll(".view").forEach((view) => {
     view.classList.toggle("active", view.dataset.view === name);
   });
@@ -78,6 +93,8 @@ function setSuggestions(items = []) {
 }
 
 function updateRoute(route) {
+  // 后端 RouteResponse 是前端地图和底部导航状态的唯一数据来源。
+  // 前端不重新计算路线，只负责展示 polyline、距离和 step。
   if (!route) return;
   currentTaskId = route.task_id;
   activeRoute = route;
@@ -119,6 +136,8 @@ function addEvent(type, detail) {
 }
 
 async function initBaiduMap() {
+  // 浏览器端百度地图 AK 不写在前端源码里，而是从 /api/v1/config/map 获取。
+  // 这样不同环境可以用不同 .env 配置。
   try {
     const config = await api.get("/api/v1/config/map");
     if (!config.baidu_browser_ak) {
@@ -217,6 +236,7 @@ function drawRoute(route, movingPoint = currentPoint || origin) {
 }
 
 function connectWebSocket() {
+  // WebSocket 用 sessionId 分组。导航/位置/视觉事件都会从这里实时进入页面。
   const protocol = location.protocol === "https:" ? "wss" : "ws";
   const socket = new WebSocket(`${protocol}://${location.host}/api/v1/ws/${sessionId}`);
 
@@ -260,6 +280,9 @@ function summarizeEvent(data) {
 }
 
 async function runAction(label, fn, nextView = "guide") {
+  // 所有按钮动作都走这个包装器：
+  // 先写事件日志，再执行异步请求，最后切换页面。
+  // 如果出错，错误会显示到问答区/导览区，方便调试接口问题。
   try {
     addEvent("action", label);
     await fn();
@@ -364,6 +387,9 @@ document.querySelector("#stopBtn")?.addEventListener("click", () => runAction("�
 }));
 
 els.chatForm.addEventListener("submit", (event) => {
+  // 问答输入框的数据流：
+  // 用户文本 -> /api/v1/agent/chat -> DeepSeek Agent 决策
+  // -> 如果是聊天，显示 response_text；如果是导航，额外 updateRoute()。
   event.preventDefault();
 
   runAction("对话请求", async () => {

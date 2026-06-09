@@ -4,12 +4,26 @@ from app.schemas.location import GeoPoint
 from app.schemas.poi import POICandidate
 from app.services.map.coordinate import angle_delta, bearing_degree, haversine_meters
 
+# FovService 用来判断“游客正在看哪里”。
+#
+# 输入是当前位置 GeoPoint 和眼镜/手机朝向 heading；
+# 输出是按 score 排序的 POI 候选。
+#
+# score 由四类信息组成：
+# - 距离：越近越可能被看到；
+# - 朝向夹角：越接近视线方向分越高；
+# - POI 优先级：重要景点更容易触发讲解；
+# - 视觉置信度：如果视觉模型识别到同一建筑，可额外加分。
+#
+# Agent 的“介绍一下这里”和 /agent/explain-nearby 都会走这里。
+
 
 class FovService:
     def __init__(self, db: Session):
         self.poi_repo = POIRepository(db)
 
     def get_visible_poi_candidates(self, current_location: GeoPoint, heading: float, fov_degree: float = 60, max_distance_meters: float = 120, visual_confidence: dict[int, float] | None = None) -> list[POICandidate]:
+        # MVP 阶段没有三维建筑遮挡和真实相机视锥，只用 2D 方位角近似。
         visual_confidence = visual_confidence or {}
         candidates: list[POICandidate] = []
         for poi, distance in self.poi_repo.nearby(current_location, radius_meters=max_distance_meters):

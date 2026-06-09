@@ -8,11 +8,21 @@ from app.schemas.navigation import NavigationState, NavigationUpdateRequest, Nav
 from app.services.navigation.navigation_service import NavigationService
 from app.services.realtime.connection_manager import connection_manager
 
+# 导航路由层负责把 HTTP 请求转给 NavigationService，并把导航状态通过
+# WebSocket 推送给同一 session 的前端/眼镜端。
+#
+# 典型数据流：
+# 1. POST /navigation/route 或 /nearest 创建路线；
+# 2. NavigationService 选择地图 Provider，生成 RouteResponse；
+# 3. 路线任务写入数据库，实时状态写入 Redis；
+# 4. connection_manager 通过 WebSocket 广播 navigation_started；
+# 5. 前端收到事件后刷新底部导航状态和地图路线。
 router = APIRouter(prefix="/navigation", tags=["navigation"])
 
 
 @router.post("/route", response_model=RouteResponse)
 async def route(payload: RouteRequest, db: Session = Depends(get_db)):
+    # 指定目的地路线：例如“从当前位置去德和园”。
     service = NavigationService(db)
     response = await service.plan_route(payload)
     await _broadcast_navigation(payload.session_id, "navigation_started", response.task_id, service)
@@ -21,6 +31,7 @@ async def route(payload: RouteRequest, db: Session = Depends(get_db)):
 
 @router.post("/nearest", response_model=RouteResponse)
 async def nearest(payload: NearestRequest, db: Session = Depends(get_db)):
+    # 最近服务点路线：例如“最近厕所/出口/服务中心”。
     service = NavigationService(db)
     response = await service.nearest_route(payload.session_id, payload.origin, payload.target_type, payload.radius_meters)
     await _broadcast_navigation(payload.session_id, "navigation_started", response.task_id, service)
@@ -29,6 +40,8 @@ async def nearest(payload: NearestRequest, db: Session = Depends(get_db)):
 
 @router.post("/update-position", response_model=NavigationUpdateResponse)
 async def update_position(payload: NavigationUpdateRequest, db: Session = Depends(get_db)):
+    # 导航过程中客户端周期性上传当前位置。
+    # 服务层会判断：是否到达、是否进入下一 step、是否偏航。
     service = NavigationService(db)
     response = service.update_position(payload.task_id, payload.location)
     state = service.get_state(payload.task_id)
@@ -47,6 +60,7 @@ async def update_position(payload: NavigationUpdateRequest, db: Session = Depend
 
 @router.post("/stop")
 async def stop(payload: StopNavigationRequest, db: Session = Depends(get_db)):
+    # 停止导航会同时更新数据库任务状态和 Redis 中的实时状态。
     service = NavigationService(db)
     task_id = service.stop(payload.session_id, payload.task_id)
     state = service.get_state(task_id)
@@ -88,6 +102,8 @@ def get_task(task_id: str, db: Session = Depends(get_db)):
 
 
 async def _broadcast_navigation(session_id: str, event_type: str, task_id: str, service: NavigationService) -> None:
+    # WebSocket 推送是“旁路通知”：HTTP 请求仍然正常返回，
+    # 连接中的客户端额外收到实时事件，用于不刷新页面更新 UI。
     await connection_manager.broadcast(
         session_id,
         {

@@ -1,9 +1,19 @@
 from app.schemas.rag import RAGAnswer, RAGChunk
 from app.services.rag.base import RAGClient
 
+# MockRAGClient 是 MVP 阶段的知识检索替身。
+#
+# 真实生产链路应该是：
+# query/poi_id -> 向量数据库 retrieve -> LLM 基于 chunks 生成答案。
+#
+# 当前为了先跑通闭环，不接真实向量库，只返回本地写死的 chunks。
+# 由于它实现了 RAGClient 接口，后续替换成真实 VectorClient 时，
+# Agent/RAG 路由层不需要改调用方式。
+
 
 class MockRAGClient(RAGClient):
     async def retrieve(self, query: str, poi_id: int | None = None, top_k: int = 5, filters: dict | None = None) -> list[RAGChunk]:
+        # retrieve 只负责返回证据片段，不负责组织完整回答。
         corpus = [
             RAGChunk(chunk_id="deheyuan_theater", title="德和园大戏楼", content="德和园大戏楼是清代皇家园林中重要的戏曲演出空间，三层戏台可配合机关、升降与声效表现神仙鬼怪、山水变化等复杂场面。", source="mock", poi_id=2, score=0.92),
             RAGChunk(chunk_id="cixi_opera", title="慈禧与听戏", content="德和园常与晚清宫廷听戏活动相关，慈禧太后曾在此观看戏曲演出。讲解时应避免编造具体剧目和日期。", source="mock", poi_id=2, score=0.86),
@@ -14,6 +24,8 @@ class MockRAGClient(RAGClient):
         return (query_hit or [])[:top_k]
 
     async def answer(self, query: str, poi_id: int | None = None, context: dict | None = None) -> RAGAnswer:
+        # answer 在 MVP 中简单拼接前两个 chunk。
+        # 如果没有 chunk，明确返回“未查到权威资料”，避免编造历史细节。
         chunks = await self.retrieve(query, poi_id=poi_id)
         if not chunks:
             return RAGAnswer(answer="我暂时没有查到权威资料，先不贸然补充历史细节。你可以换个问法，或把视线对准建筑正面让我再判断一次。", chunks=[], confidence=0.2, safety_notes=["no_authoritative_context"])

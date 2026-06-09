@@ -7,6 +7,17 @@ from pydantic import BaseModel, Field
 from app.core.config import get_settings
 from app.schemas.agent import AgentChatRequest
 
+# 这个文件只负责“调用 DeepSeek 并拿到结构化决策”，不直接执行业务工具。
+# 这样可以把 LLM 的不确定性关在 AgentDecision 这一层：
+# DeepSeek 只说 action/destination/reply，真正能不能导航、怎么导航，
+# 仍由 GuideAgent 和 NavigationService 按后端规则执行。
+#
+# 数据流：
+# AgentChatRequest + 当前 POI 列表
+# -> DeepSeek Chat Completions
+# -> JSON 字符串
+# -> AgentDecision(Pydantic 校验)
+# -> GuideAgent 根据 action 调工具或直接回复。
 
 AgentDecisionAction = Literal[
     "NAVIGATE_TO_POI",
@@ -20,6 +31,10 @@ AgentDecisionAction = Literal[
 
 
 class AgentDecision(BaseModel):
+    # LLM 给后端的“工具调用计划”。
+    # action 决定下一步走哪个分支；
+    # reply 是不需要工具或需要澄清时给用户看的自然语言；
+    # destination_* 是导航工具需要的槽位。
     action: AgentDecisionAction
     reply: str
     destination_name: str | None = None
@@ -37,6 +52,9 @@ class DeepSeekAgentClient:
         return bool(self.settings.deepseek_api_key)
 
     async def decide(self, request: AgentChatRequest, poi_names: list[str]) -> AgentDecision:
+        # 这里调用的是 DeepSeek 的 OpenAI-compatible /chat/completions。
+        # response_format=json_object 要求模型尽量返回 JSON，后面仍用
+        # Pydantic 做二次校验，避免模型输出格式漂移直接污染业务层。
         if not self.settings.deepseek_api_key:
             raise RuntimeError("DEEPSEEK_API_KEY is not configured")
 
@@ -64,6 +82,8 @@ class DeepSeekAgentClient:
         return self._parse_decision(content)
 
     def _parse_decision(self, content: str) -> AgentDecision:
+        # 把模型文本变成强类型对象。这里兼容 intent/UNKNOWN 是为了
+        # 后续换模型或 prompt 调整时，减少接口字段小变化带来的崩溃。
         try:
             raw: dict[str, Any] = json.loads(content)
         except json.JSONDecodeError as exc:
@@ -76,6 +96,9 @@ class DeepSeekAgentClient:
         return AgentDecision.model_validate(raw)
 
     def _system_prompt(self, poi_names: list[str]) -> str:
+        # Prompt 的关键约束：
+        # “只有明确路线需求才导航”。普通问答必须留在聊天分支，
+        # 这能避免用户问历史故事时误触发路线规划。
         poi_text = "、".join(poi_names[:80]) or "德和园、仁寿殿、佛香阁、长廊、昆明湖、厕所、出口"
         return f"""
 你是颐和园 AI 导览眼镜的后端 Agent。你必须根据游客输入，自主判断是否需要调用导航工具。
@@ -104,6 +127,9 @@ class DeepSeekAgentClient:
 """.strip()
 
     def _user_prompt(self, request: AgentChatRequest) -> str:
+        # 用户输入不是单独一行文本，而是带上下文发给模型：
+        # location/heading/current_poi/detected_pois 会帮助模型判断
+        # “这里”“这个建筑”“前方建筑”到底指什么。
         context = {
             "user_text": request.text,
             "location": request.location.model_dump() if request.location else None,

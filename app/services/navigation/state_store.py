@@ -7,8 +7,20 @@ from redis.exceptions import RedisError
 from app.core.config import get_settings
 from app.schemas.navigation import NavigationState
 
+# 导航状态存储层。
+#
+# 为什么不只存数据库？
+# navigation_task 适合保存任务历史，但导航中每 1-3 秒更新一次位置，
+# 如果每次都完全依赖数据库，会让实时状态恢复和 WebSocket 推送变慢。
+#
+# 这里采用 Redis + 内存兜底：
+# - Redis：跨进程、可恢复、适合当前导航状态；
+# - InMemory：Redis 断开时仍可在当前进程内继续演示。
+
 
 class InMemoryNavigationStateStore:
+    # 仅用于兜底和测试。生产多进程部署时，不同进程的内存不共享，
+    # 所以真实运行主要依赖 RedisNavigationStateStore。
     def __init__(self) -> None:
         self.by_task: dict[str, NavigationState] = {}
         self.active_by_session: dict[str, str] = {}
@@ -44,6 +56,8 @@ class RedisNavigationStateStore:
         return f"guide:session:{session_id}:active_navigation"
 
     def save(self, state: NavigationState) -> NavigationState:
+        # 写 Redis 前先写内存兜底。即使 Redis 暂时失败，
+        # 当前进程仍可读取最近一次状态。
         state.updated_at = time.time()
         self.fallback.save(state)
         try:
@@ -67,6 +81,8 @@ class RedisNavigationStateStore:
         return self.fallback.get(task_id)
 
     def active_for_session(self, session_id: str) -> NavigationState | None:
+        # 前端刷新后可通过 session_id 找回当前活动导航任务，
+        # 不需要知道 task_id。
         try:
             task_id = self.redis.get(self.active_session_key(session_id))
             if task_id:
@@ -76,4 +92,6 @@ class RedisNavigationStateStore:
         return self.fallback.active_for_session(session_id)
 
 
+# 全局单例：服务层直接 import 使用。
+# MVP 简化了依赖注入；后续如果做测试隔离/多租户，可以改成 FastAPI Depends。
 navigation_state_store = RedisNavigationStateStore(get_settings().redis_url)
