@@ -1,3 +1,9 @@
+# Agent 端到端测试。
+#
+# 覆盖 /api/v1/agent/chat 的两条核心路径：
+# - 导航意图：返回 route/actions；
+# - 历史问答：返回 response_text。
+
 def test_agent_navigate_toilet(client):
     resp = client.post("/api/v1/agent/chat", json={
         "session_id": "agent1",

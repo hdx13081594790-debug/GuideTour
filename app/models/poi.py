@@ -2,6 +2,14 @@ from sqlalchemy import Boolean, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin
 
+# POI 表：园区内所有可搜索、可导航、可讲解的位置点。
+#
+# 数据流：
+# scripts/seed_poi.py 写入基础 POI；
+# POIRepository 负责查询；
+# NavigationService 用 POI 坐标规划路线；
+# FovService 用 POI 坐标和 priority 判断视野候选。
+
 
 class POI(Base, TimestampMixin):
     __tablename__ = "poi"

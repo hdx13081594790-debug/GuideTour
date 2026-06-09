@@ -5,11 +5,20 @@ from app.schemas.poi import POIRead
 from app.services.map.base import MapProviderClient
 from app.services.map.coordinate import haversine_meters
 
+# 本地园区路网兜底 Provider。
+#
+# 当没有高德/百度 Key，或外部地图无法返回景区内部路线时，
+# NavigationService 会使用 LocalGraphRouter 返回一条可演示路线。
+#
+# MVP 没有真实路网图结构，因此这里用“起点-中点-终点”的 mock polyline
+# 和三段步行指令模拟园区内路线。后续可以替换为真实 graph shortest path。
+
 
 class LocalGraphRouter(MapProviderClient):
     name = "local"
 
     async def search_poi(self, query: str, location: GeoPoint | None = None, radius: int = 1000) -> list[POIRead]:
+        # 本地路由器不负责 POI 搜索；POI 搜索由 POIRepository 或外部地图完成。
         return []
 
     async def walking_route(self, origin: GeoPoint, destination: GeoPoint, destination_name: str = "目的地") -> RouteResponse:

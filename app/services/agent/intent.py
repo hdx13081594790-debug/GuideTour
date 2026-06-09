@@ -1,3 +1,13 @@
+# 规则意图识别兜底。
+#
+# 现在主流程优先走 DeepSeekAgentClient，由大模型决定 action。
+# 这个函数只在以下场景使用：
+# - 没有配置 DEEPSEEK_API_KEY；
+# - DeepSeek 调用失败且 DEEPSEEK_FALLBACK_TO_RULES=true；
+# - 单元测试或离线演示。
+#
+# 返回值是 (intent, slots)，GuideAgent 会把它包装成 AgentDecision。
+
 def classify_intent(text: str) -> tuple[str, dict]:
     normalized = text.strip()
     slots: dict = {}

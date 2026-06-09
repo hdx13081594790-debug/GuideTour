@@ -1,3 +1,8 @@
+# 导航接口测试。
+#
+# 覆盖最近厕所和指定景点路线：
+# HTTP 请求 -> NavigationService -> 地图 Provider/LocalGraphRouter -> RouteResponse。
+
 def test_nearest_toilet(client):
     resp = client.post("/api/v1/navigation/nearest", json={
         "session_id": "s001",

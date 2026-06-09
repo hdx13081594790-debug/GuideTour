@@ -2,6 +2,11 @@ from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin
 
+# 照片资产表。
+#
+# 手势拍照或前端拍照接口会创建 photo_asset 记录。
+# MVP 只保存元数据和 frame_id；后续可接对象存储 URL、缩略图、纪念册。
+
 
 class PhotoAsset(Base, TimestampMixin):
     __tablename__ = "photo_asset"

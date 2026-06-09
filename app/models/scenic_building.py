@@ -2,6 +2,12 @@ from sqlalchemy import Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin
 
+# 景点建筑扩展表。
+#
+# POI 表只保存“点位”；scenic_building 保存建筑/景点的文化讲解元数据，
+# 例如朝向、推荐观看距离、RAG collection 名称等。
+# MVP 中主要预留结构，后续真实 RAG 和视觉识别会用它增强讲解。
+
 
 class ScenicBuilding(Base, TimestampMixin):
     __tablename__ = "scenic_building"

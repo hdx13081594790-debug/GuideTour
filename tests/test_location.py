@@ -1,3 +1,8 @@
+# 位置状态测试。
+#
+# 覆盖 /location/update 和 /location/current：
+# 上传设备位置 -> Redis/内存位置仓库保存 -> 按 session 读取。
+
 def test_location_update_and_current(client):
     payload = {
         "session_id": "loc1",

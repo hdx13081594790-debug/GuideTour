@@ -1,3 +1,11 @@
+# WebSocket 测试。
+#
+# 覆盖实时推送链路：
+# 客户端连接 /ws/{session_id}
+# -> HTTP 更新位置
+# -> connection_manager.broadcast
+# -> WebSocket 收到 location_updated。
+
 def test_websocket_receives_location_update(client):
     with client.websocket_connect("/api/v1/ws/ws-location-1") as websocket:
         connected = websocket.receive_json()

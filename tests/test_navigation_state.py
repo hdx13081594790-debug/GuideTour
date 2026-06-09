@@ -1,5 +1,9 @@
 from app.services.navigation.state_store import navigation_state_store
 
+# 导航实时状态测试。
+#
+# 覆盖路线创建、位置更新、停止导航后 Redis/内存状态是否同步变化。
+
 
 def test_navigation_state_saved_updated_and_cancelled(client):
     route_resp = client.post("/api/v1/navigation/nearest", json={

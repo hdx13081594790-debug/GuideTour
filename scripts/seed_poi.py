@@ -3,6 +3,17 @@ from app.db.session import SessionLocal
 from app.models.poi import POI
 from app.models.scenic_building import ScenicBuilding
 
+# MVP 种子数据脚本。
+#
+# main.py 启动时会调用 seed()，确保本地数据库里至少有一批颐和园 POI。
+# 这些点位支持：
+# - 最近厕所导航；
+# - 德和园/仁寿殿等景点路线规划；
+# - FovService 根据位置和朝向推断可见景点；
+# - MockRAGClient 根据 poi_id 返回讲解。
+#
+# 注意：真实项目应把坐标和景点资料放入后台管理或正式数据导入流程。
+
 
 SEED_POIS = [
     (1, "德和园", "deheyuan", "scenic_spot", 116.27300, 39.99950, "清代皇家听戏相关区域。", 8),
@@ -25,6 +36,7 @@ SEED_POIS = [
 
 
 def seed() -> None:
+    # seed 是幂等的：如果 id 已存在就跳过，避免每次启动重复插入。
     init_db()
     db = SessionLocal()
     try:

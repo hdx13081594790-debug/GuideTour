@@ -7,12 +7,19 @@ from app.models.navigation_task import NavigationTask
 from app.schemas.location import GeoPoint
 from app.schemas.navigation import RouteResponse, RouteStep
 
+# NavigationRepository 负责 navigation_task 表的持久化。
+#
+# 它不规划路线、不判断偏航，只把 NavigationService 已经算好的路线
+# 保存到数据库，或从数据库还原成 RouteResponse。
+
 
 class NavigationRepository:
     def __init__(self, db: Session):
         self.db = db
 
     def save_route(self, session_id: str, route: RouteResponse, origin: GeoPoint, destination_poi_id: int | None, provider: str = "local") -> NavigationTask:
+        # RouteResponse 中的 polyline/steps 是结构化对象；
+        # 数据库里用 JSON 字符串保存，便于后续恢复。
         task = NavigationTask(
             task_id=route.task_id,
             user_session_id=session_id,
@@ -36,6 +43,7 @@ class NavigationRepository:
         return self.db.execute(select(NavigationTask).where(NavigationTask.task_id == task_id)).scalar_one_or_none()
 
     def active_for_session(self, session_id: str) -> NavigationTask | None:
+        # 用 session_id 找当前仍在导航中的最近任务。
         return self.db.execute(
             select(NavigationTask)
             .where(NavigationTask.user_session_id == session_id, NavigationTask.status == "navigating")
@@ -49,6 +57,7 @@ class NavigationRepository:
         return task
 
     def to_response(self, task: NavigationTask) -> RouteResponse:
+        # 把数据库任务恢复成前端可消费的 RouteResponse。
         return RouteResponse(
             task_id=task.task_id,
             destination_name=task.destination_name,

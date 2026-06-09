@@ -9,6 +9,12 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+# 初始数据库结构迁移。
+#
+# 这个文件描述 MVP 所需的所有业务表：
+# poi/scenic_building/user_session/device/navigation_task/interaction_log/photo_asset。
+# Alembic 根据 revision/down_revision 建立迁移链，upgrade 创建表，downgrade 删除表。
+
 
 revision: str = "20260530_0001"
 down_revision: Union[str, None] = None
@@ -17,6 +23,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # 正向迁移：从空库创建项目初始 schema。
     op.create_table(
         "poi",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -155,6 +162,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # 反向迁移：按外键依赖的相反顺序删除表和索引。
     op.drop_index(op.f("ix_photo_asset_session_id"), table_name="photo_asset")
     op.drop_index(op.f("ix_photo_asset_asset_id"), table_name="photo_asset")
     op.drop_table("photo_asset")

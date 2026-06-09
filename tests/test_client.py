@@ -1,3 +1,8 @@
+# 前端静态页面测试。
+#
+# 验证 FastAPI 可以直接返回 /client 页面和 app.js。
+# 这保证“不用 npm，后端托管前端”的部署方式没有被破坏。
+
 def test_mobile_client_page_loads(client):
     resp = client.get("/client")
     assert resp.status_code == 200

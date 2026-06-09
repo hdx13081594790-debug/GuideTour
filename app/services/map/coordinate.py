@@ -1,16 +1,28 @@
 import math
 from app.schemas.location import GeoPoint
 
+# 地图坐标与几何工具。
+#
+# 项目内部统一使用 GeoPoint(lng, lat)。
+# 不同地图厂商的参数顺序不同，因此所有适配层必须从这里转换：
+# - 高德：lng,lat；
+# - 百度服务端：lat,lng。
+#
+# 导航中的距离、朝向、偏航判断也集中在这里，避免各服务重复实现。
+
 
 def to_amap_point(point: GeoPoint) -> str:
+    # 高德 Web 服务使用 "lng,lat" 字符串。
     return f"{point.lng},{point.lat}"
 
 
 def to_baidu_point(point: GeoPoint) -> str:
+    # 百度部分服务端接口使用 "lat,lng" 字符串。
     return f"{point.lat},{point.lng}"
 
 
 def haversine_meters(a: GeoPoint, b: GeoPoint) -> float:
+    # 球面距离，适合两个经纬度点之间的近似直线距离。
     radius = 6371000
     lat1, lat2 = math.radians(a.lat), math.radians(b.lat)
     dlat = math.radians(b.lat - a.lat)
@@ -20,6 +32,7 @@ def haversine_meters(a: GeoPoint, b: GeoPoint) -> float:
 
 
 def bearing_degree(a: GeoPoint, b: GeoPoint) -> float:
+    # 从点 a 看向点 b 的方位角，0=北，90=东。
     lat1, lat2 = math.radians(a.lat), math.radians(b.lat)
     dlng = math.radians(b.lng - a.lng)
     y = math.sin(dlng) * math.cos(lat2)
@@ -28,6 +41,7 @@ def bearing_degree(a: GeoPoint, b: GeoPoint) -> float:
 
 
 def angle_delta(a: float, b: float) -> float:
+    # 两个角度的最小夹角，处理 359° 和 1° 这种跨 0 情况。
     return abs((a - b + 180) % 360 - 180)
 
 
@@ -50,6 +64,7 @@ def point_to_segment_distance_meters(point: GeoPoint, start: GeoPoint, end: GeoP
 
 
 def distance_to_polyline_meters(point: GeoPoint, polyline: list[GeoPoint]) -> float:
+    # 当前点到路线折线的最短距离，用于偏航判断。
     if not polyline:
         return 0
     if len(polyline) == 1:

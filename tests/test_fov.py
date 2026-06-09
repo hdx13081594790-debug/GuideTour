@@ -1,3 +1,8 @@
+# 视野讲解测试。
+#
+# 覆盖 /agent/explain-nearby：
+# 位置 + 朝向 -> FovService 候选 POI -> RAG/讲解响应。
+
 def test_explain_nearby(client):
     resp = client.post("/api/v1/agent/explain-nearby", json={
         "session_id": "s001",

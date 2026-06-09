@@ -3,6 +3,11 @@ import pytest
 from app.schemas.location import GeoPoint
 from app.services.map.baidu_client import BaiduClient
 
+# 百度地图适配器单元测试。
+#
+# 不真实请求百度网络，而是 monkeypatch _get_json，验证百度原始 JSON
+# 能正确转换成项目统一的 POIRead/RouteResponse。
+
 
 @pytest.mark.anyio
 async def test_baidu_search_poi_parses_results():

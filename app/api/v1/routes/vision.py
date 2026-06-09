@@ -9,6 +9,16 @@ from app.services.vision.gesture_service import GestureService
 from app.services.vision.vision_service import VisionService
 from app.services.realtime.connection_manager import connection_manager
 
+# 视觉路由。
+#
+# 数据流：
+# 眼镜上传单帧/多帧 -> VisionService 识别 POI
+# -> GestureService 识别手势并决定动作
+# -> 如触发拍照则 PhotoService 创建资产
+# -> VisionAnalyzeResponse 返回 HTTP，同时通过 WebSocket 广播。
+#
+# 当前 VisionService/GestureService 是 mock，可替换成真实模型服务。
+
 router = APIRouter(prefix="/vision", tags=["vision"])
 gesture_service = GestureService()
 
@@ -24,6 +34,7 @@ async def analyze_frame(
     mock_gesture: str | None = Form(None),
     db: Session = Depends(get_db),
 ):
+    # multipart 单帧入口，适合真实眼镜上传 JPEG/PNG。
     content = await file.read()
     location = GeoPoint(lng=lng, lat=lat) if lng is not None and lat is not None else None
     detected_pois = await VisionService(db).analyze_frame(content, location, heading)
@@ -40,6 +51,7 @@ async def analyze_frame(
 
 @router.post("/analyze-frames", response_model=VisionAnalyzeResponse)
 async def analyze_frames(payload: AnalyzeFramesRequest, db: Session = Depends(get_db)):
+    # 多帧/关键帧序列入口。MVP 用 mock_gesture 模拟连续手势。
     detected_pois = await VisionService(db).analyze_frame(b"", None, None)
     gestures = await gesture_service.detect(b"", payload.mock_gesture)
     actions = await gesture_service.decide_action(gestures, {"session_id": payload.session_id, "detected_poi_name": detected_pois[0].name if detected_pois else None})
@@ -50,6 +62,7 @@ async def analyze_frames(payload: AnalyzeFramesRequest, db: Session = Depends(ge
 
 @router.post("/gesture")
 async def gesture(payload: AnalyzeFramesRequest):
+    # 只测手势，不做 POI 识别。
     gestures = await gesture_service.detect(b"", payload.mock_gesture)
     actions = await gesture_service.decide_action(gestures, {"session_id": payload.session_id})
     result = {"detected_gestures": gestures, "actions": actions}
